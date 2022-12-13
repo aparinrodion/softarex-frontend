@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import NavigationBar from "./NavigationBar";
 
 import "bootstrap/dist/css/bootstrap.css";
@@ -8,10 +8,15 @@ import BootstrapTable from "react-bootstrap-table-next";
 import paginationFactory from "react-bootstrap-table2-paginator"
 import {FiEdit, FiTrash} from "react-icons/fi";
 import {Button, Modal} from "react-bootstrap";
+import {MDBDropdown, MDBInput} from "mdb-react-ui-kit";
+import {useParams} from "react-router-dom";
+import axios from "axios";
 
 const Fields = () => {
     const [modalShow, setModalShow] = useState(false);
     const [clickedRow, setClickedRow] = useState("");
+    const [fields, setFields] = useState([]);
+    const params = useParams();
 
     function EditFieldModal(props) {
         return (
@@ -23,9 +28,12 @@ const Fields = () => {
             >
                 <Modal.Header closeButton>
                     <Modal.Title id="contained-modal-title-vcenter">
-                        Edit Field
+                        {props.title}
                     </Modal.Title>
                 </Modal.Header>
+                <label>Label:</label>
+                <MDBInput value={props.data.label}></MDBInput>
+                <MDBDropdown value={props.data.type}></MDBDropdown>
                 <Modal.Body>
                     {props.data.id}
                 </Modal.Body>
@@ -47,43 +55,42 @@ const Fields = () => {
         </div>)
     }
 
+    function loadFields() {
+        axios.get("http://localhost:8080/questionnaires/" + params.id, {
+            headers: {
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            }
+        }).then(response => {
+            setFields(response.data)
+        })
+    }
+
+    useEffect(() => {
+        loadFields()
+    }, [])
+
     const columns = [{
-        dataField: 'id',
-        text: 'Product ID',
+        dataField: 'label',
+        text: 'Label',
     }, {
-        dataField: 'name',
-        text: 'Product Name'
+        dataField: 'type',
+        text: 'Type'
     }, {
-        dataField: 'price',
-        text: 'Product Price'
+        dataField: 'required',
+        text: 'Required'
     }, {
-        dataField: 'buttons',
-        text: 'test',
+        dataField: 'active',
+        text: 'Is Active',
+    }, {
         formatter: buttons
     }
     ];
-    const products = [
-        {
-            id: '1',
-            name: 'name1',
-            price: 'price'
-        },
-        {
-            id: '2',
-            name: 'name1',
-            price: 'price'
-        },
-        {
-            id: '3',
-            name: 'name1',
-            price: 'price'
-        }
-    ]
+
     return (
         <div>
             <NavigationBar name={'test'}/>
             <div className='w-50'>
-                <BootstrapTable keyField='id' data={products} columns={columns}
+                <BootstrapTable keyField={'id'} data={fields} columns={columns}
                                 pagination={paginationFactory({
                                     sizePerPage: 3,
                                     hideSizePerPage: true,
@@ -94,6 +101,7 @@ const Fields = () => {
                                 })}/>
             </div>
             <EditFieldModal
+                title={'Edit'}
                 show={modalShow}
                 onHide={() => setModalShow(false)}
                 data={clickedRow}
